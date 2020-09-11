@@ -7,7 +7,6 @@ pragma solidity ^0.6.12;
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/math/SafeMath.sol";
 
-
 interface IUniswapV2Pair {
     function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
 }
@@ -23,21 +22,20 @@ contract StaticPriceSale is Ownable{
 
     uint256 public endBlock;
 
-
     // UniswapV2 ETH/USDT pool address
-    IUniswapV2Pair pair = IUniswapV2Pair(address(0xdAC17F958D2ee523a2206206994597C13D831ec7));
+    IUniswapV2Pair public pair;
 
     // DEUSToken contract address
     DEUSToken public deusToken;
 
-
     function setEndBlock(uint256 _endBlock) public onlyOwner{
         endBlock = _endBlock;
     }
-    
-    constructor(uint256 _endBlock, address _deusToken) public {
+
+    constructor(uint256 _endBlock, address _deusToken, address _pair) public {
         endBlock = _endBlock;
         deusToken = DEUSToken(_deusToken);
+        pair = IUniswapV2Pair(_pair);
     }
 
     // price of deus in Eth based on uniswap v2 ETH/USDT pool
@@ -50,7 +48,7 @@ contract StaticPriceSale is Ownable{
     }
 
     function buy() public payable{
-        require(block.number <= endBlock, 'presale has been finished');
+        require(block.number <= endBlock, 'static price sale has been finished');
 
         uint256 tokenAmount = msg.value.mul(price());
         deusToken.mint(msg.sender, tokenAmount);
@@ -61,6 +59,5 @@ contract StaticPriceSale is Ownable{
     }
 
 }
-
 
 //Dar panah khoda
