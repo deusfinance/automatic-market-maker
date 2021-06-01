@@ -22,7 +22,7 @@ interface IWETH {
 	function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 }
 
-contract AutomaticMarketMakerV2 is AccessControl {
+contract AutomaticMarketMakerV2 is AccessControl, ReentrancyGuard {
 
 	bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 	bytes32 public constant FEE_COLLECTOR_ROLE = keccak256("FEE_COLLECTOR_ROLE");
@@ -92,7 +92,7 @@ contract AutomaticMarketMakerV2 is AccessControl {
 		revert();
 	}
 
-	constructor(address _WETH, address _deusToken, address _power) {
+	constructor(address _WETH, address _deusToken, address _power) ReentrancyGuard() {
 		_setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 		_setupRole(OPERATOR_ROLE, msg.sender);
 		_setupRole(FEE_COLLECTOR_ROLE, msg.sender);
