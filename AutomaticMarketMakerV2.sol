@@ -1,5 +1,4 @@
 //Be name khoda
-
 //SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.4;
@@ -27,11 +26,11 @@ contract AutomaticMarketMakerV2 is AccessControl, ReentrancyGuard {
 	bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 	bytes32 public constant FEE_COLLECTOR_ROLE = keccak256("FEE_COLLECTOR_ROLE");
 
-	event Buy(address user, uint256 deusTokenAmount, uint256 wethAmount, uint256 feeAmount);
-	event Sell(address user, uint256 wethAmount, uint256 deusTokenAmount, uint256 feeAmount);
+	event Buy(address user, uint256 dbEthTokenAmount, uint256 wethAmount, uint256 feeAmount);
+	event Sell(address user, uint256 wethAmount, uint256 dbEthTokenAmount, uint256 feeAmount);
 
 
-	IERC20 public deusToken;
+	IERC20 public dbEthToken;
 	IWETH public WETH;
 	IPower public Power;
 	uint256 public reserve;
@@ -92,14 +91,14 @@ contract AutomaticMarketMakerV2 is AccessControl, ReentrancyGuard {
 		revert();
 	}
 
-	constructor(address _WETH, address _deusToken, address _power) ReentrancyGuard() {
+	constructor(address _WETH, address _dbEthToken, address _power) ReentrancyGuard() {
 		_setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 		_setupRole(OPERATOR_ROLE, msg.sender);
 		_setupRole(FEE_COLLECTOR_ROLE, msg.sender);
 
 		daoWallet = msg.sender;
 		WETH = IWETH(_WETH);
-		deusToken = IERC20(_deusToken);
+		dbEthToken = IERC20(_dbEthToken);
 		Power = IPower(_power);
 	}
 
@@ -128,15 +127,15 @@ contract AutomaticMarketMakerV2 is AccessControl, ReentrancyGuard {
 
 		uint256 feeAmount = wethAmount * daoShare / daoShareScale;
 		wethAmount = wethAmount - feeAmount;
-		uint256 supply = deusToken.totalSupply();
+		uint256 supply = dbEthToken.totalSupply();
 		
 		if (supply < firstSupply){
 			if  (reserve + wethAmount > firstReserve){
 				uint256 exteraDeusAmount = reserve + wethAmount - firstReserve;
-				uint256 deusAmount = firstSupply - supply;
+				uint256 dbEthAmount = firstSupply - supply;
 
-				deusAmount = deusAmount + _bancorCalculatePurchaseReturn(firstSupply, firstReserve - reserveShiftAmount, cw, exteraDeusAmount);
-				return (deusAmount, feeAmount);
+				dbEthAmount = dbEthAmount + _bancorCalculatePurchaseReturn(firstSupply, firstReserve - reserveShiftAmount, cw, exteraDeusAmount);
+				return (dbEthAmount, feeAmount);
 			}
 			else{
 				return (supply * wethAmount / reserve, feeAmount);
@@ -146,24 +145,24 @@ contract AutomaticMarketMakerV2 is AccessControl, ReentrancyGuard {
 		}
 	}
 
-	function buyFor(address user, uint256 _deusAmount, uint256 _wethAmount) public nonReentrant() {
+	function buyFor(address user, uint256 _dbEthAmount, uint256 _wethAmount) public nonReentrant() {
 		require(!isBlackListed[user], "freezed address");
 		
-		(uint256 deusAmount, uint256 feeAmount) = calculatePurchaseReturn(_wethAmount);
-		require(deusAmount >= _deusAmount, 'price changed');
+		(uint256 dbEthAmount, uint256 feeAmount) = calculatePurchaseReturn(_wethAmount);
+		require(dbEthAmount >= _dbEthAmount, 'price changed');
 
 		reserve = reserve + _wethAmount - feeAmount;
 
 		WETH.transferFrom(msg.sender, address(this), _wethAmount);
-		deusToken.mint(user, deusAmount);
+		dbEthToken.mint(user, dbEthAmount);
 
 		daoFeeAmount = daoFeeAmount + feeAmount;
 
-		emit Buy(user, deusAmount, _wethAmount, feeAmount);
+		emit Buy(user, dbEthAmount, _wethAmount, feeAmount);
 	}
 
-	function buy(uint256 deusTokenAmount, uint256 wethAmount) public {
-		buyFor(msg.sender, deusTokenAmount, wethAmount);
+	function buy(uint256 dbEthTokenAmount, uint256 wethAmount) public {
+		buyFor(msg.sender, dbEthTokenAmount, wethAmount);
 	}
 
 	function _bancorCalculateSaleReturn(
@@ -192,43 +191,43 @@ contract AutomaticMarketMakerV2 is AccessControl, ReentrancyGuard {
 		return (oldBalance - newBalance) / result;
 	}
 
-	function calculateSaleReturn(uint256 deusAmount) public view returns (uint256, uint256) {
-		uint256 supply = deusToken.totalSupply();
+	function calculateSaleReturn(uint256 dbEthAmount) public view returns (uint256, uint256) {
+		uint256 supply = dbEthToken.totalSupply();
 		uint256 returnAmount;
 
 		if (supply > firstSupply) {
-			if (firstSupply > supply - deusAmount) {
-				uint256 exteraFutureAmount = firstSupply - (supply - deusAmount);
+			if (firstSupply > supply - dbEthAmount) {
+				uint256 exteraFutureAmount = firstSupply - (supply - dbEthAmount);
 				uint256 wethAmount = reserve - firstReserve;
 				returnAmount = wethAmount + (firstReserve * exteraFutureAmount / firstSupply);
 
 			} else {
-				returnAmount = _bancorCalculateSaleReturn(supply, reserve - reserveShiftAmount, cw, deusAmount);
+				returnAmount = _bancorCalculateSaleReturn(supply, reserve - reserveShiftAmount, cw, dbEthAmount);
 			}
 		} else {
-			returnAmount = reserve * deusAmount / supply;
+			returnAmount = reserve * dbEthAmount / supply;
 		}
 		uint256 feeAmount = returnAmount * daoShare / daoShareScale;
 		return (returnAmount - feeAmount, feeAmount);
 	}
 
-	function sellFor(address user, uint256 deusAmount, uint256 _wethAmount) public nonReentrant() {
+	function sellFor(address user, uint256 dbEthAmount, uint256 _wethAmount) public nonReentrant() {
 		require(!isBlackListed[user], "freezed address");
 		
-		(uint256 wethAmount, uint256 feeAmount) = calculateSaleReturn(deusAmount);
+		(uint256 wethAmount, uint256 feeAmount) = calculateSaleReturn(dbEthAmount);
 		require(wethAmount >= _wethAmount, 'price changed');
 
 		reserve = reserve - (wethAmount + feeAmount);
-		deusToken.burn(msg.sender, deusAmount);
+		dbEthToken.burn(msg.sender, dbEthAmount);
 		WETH.transfer(msg.sender, wethAmount);
 
 		daoFeeAmount = daoFeeAmount + feeAmount;
 
-		emit Sell(user, wethAmount, deusAmount, feeAmount);
+		emit Sell(user, wethAmount, dbEthAmount, feeAmount);
 	}
 
-	function sell(uint256 deusTokenAmount, uint256 wethAmount) public {
-		sellFor(msg.sender, deusTokenAmount, wethAmount);
+	function sell(uint256 dbEthTokenAmount, uint256 wethAmount) public {
+		sellFor(msg.sender, dbEthTokenAmount, wethAmount);
 	}
 }
 

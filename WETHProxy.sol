@@ -11,29 +11,36 @@ interface IWETH9 {
 }
 
 interface IAMM {
-	function buyFor(address user, uint256 _deusAmount, uint256 _wethAmount) external;
-	function sellFor(address user, uint256 deusAmount, uint256 _wethAmount) external;
+	function buyFor(address user, uint256 _dbEthAmount, uint256 _wethAmount) external;
+	function sellFor(address user, uint256 dbEthAmount, uint256 _wethAmount) external;
+}
+
+interface IdbETH {
+	function transferFrom(address sender, address recipient, uint256 amount) external;
 }
 
 contract WethProxy{
 
 	IWETH9 public wethToken;
 	IAMM public AMM;
+	IdbETH public dbETH;
 
-	constructor(address amm, address wethAddress) {
+	constructor(address amm, address wethAddress, address _dbEth) {
 		AMM = IAMM(amm);
 		wethToken = IWETH9(wethAddress);
+		dbETH = IdbETH(_dbEth);
 		wethToken.approve(amm, 1e50);
 	}
 
-	function buy(uint256 _deusAmount, uint256 _wethAmount) public payable{
+	function buy(uint256 _dbEthAmount, uint256 _wethAmount) external payable {
 		wethToken.deposit{value:msg.value}();
-		AMM.buyFor(msg.sender, _deusAmount, _wethAmount);
+		AMM.buyFor(msg.sender, _dbEthAmount, _wethAmount);
 	}
 
-	function sell(uint256 deusAmount, uint256 _wethAmount) public {
-		AMM.sellFor(msg.sender, deusAmount, _wethAmount);
-		uint256 wethAmount = wethToken.balanceOf(address(this)); 
+	function sell(uint256 dbEthAmount, uint256 _wethAmount) external {
+		dbETH.transferFrom(msg.sender, address(this), dbEthAmount);
+		AMM.sellFor(msg.sender, dbEthAmount, _wethAmount);
+		uint256 wethAmount = wethToken.balanceOf(address(this));
 		wethToken.withdraw(wethAmount);
 		payable(msg.sender).transfer(wethAmount);
 	}
