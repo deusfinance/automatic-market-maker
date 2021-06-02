@@ -65,6 +65,7 @@ contract AutomaticMarketMakerV2 is AccessControl, ReentrancyGuard {
 	function withdrawFee(uint256 amount) public {
 		require(hasRole(FEE_COLLECTOR_ROLE, msg.sender), "Caller is not an FeeCollector");
 		require(amount <= daoFeeAmount, "amount is bigger than daoFeeAmount");
+		daoFeeAmount = daoFeeAmount - amount;
 		WETH.transfer(daoWallet, amount);
 	}
 
