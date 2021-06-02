@@ -45,6 +45,10 @@ contract WethProxy{
 		payable(msg.sender).transfer(wethAmount);
 	}
 
+	receive() external payable {
+		// receive ether
+	}
+
 }
 
 //Dar panah khoda
