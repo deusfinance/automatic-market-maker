@@ -77,6 +77,10 @@ contract AutomaticMarketMakerV2 is AccessControl, ReentrancyGuard {
 		isBlackListed[user] = true;
 	}
 
+	function removeBlackList(address user) external onlyOperator {
+		isBlackListed[user] = false;
+	}
+
 	function init(uint256 _firstReserve, uint256 _firstSupply) external onlyOperator {
 		reserve = _firstReserve;
 		firstReserve = _firstReserve;
