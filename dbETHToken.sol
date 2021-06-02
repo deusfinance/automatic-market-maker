@@ -15,7 +15,7 @@ contract dbETHToken is ERC20, AccessControl{
 	bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 	bytes32 public constant CURRENT_POINT_INDEX_SETTER_ROLE = keccak256("CURRENT_POINT_INDEX_SETTER_ROLE");
 
-	constructor() public ERC20("bonded ethereum", "dbETH") {
+	constructor() ERC20("bonded ethereum", "dbETH") {
 		_setupRole(DEFAULT_ADMIN_ROLE, msg.sender);	
 	}
 
