@@ -32,17 +32,17 @@ contract WethProxy{
 		wethToken.approve(amm, 1e50);
 	}
 
-	function buy(uint256 _dbEthAmount, uint256 _wethAmount) external payable {
+	function buy(address user, uint256 _dbEthAmount, uint256 _wethAmount) external payable {
 		wethToken.deposit{value:msg.value}();
-		AMM.buyFor(msg.sender, _dbEthAmount, _wethAmount);
+		AMM.buyFor(user, _dbEthAmount, _wethAmount);
 	}
 
-	function sell(uint256 dbEthAmount, uint256 _wethAmount) external {
+	function sell(address user, uint256 dbEthAmount, uint256 _wethAmount) external {
 		dbETH.transferFrom(msg.sender, address(this), dbEthAmount);
 		AMM.sellFor(msg.sender, dbEthAmount, _wethAmount);
 		uint256 wethAmount = wethToken.balanceOf(address(this));
 		wethToken.withdraw(wethAmount);
-		payable(msg.sender).transfer(wethAmount);
+		payable(user).transfer(wethAmount);
 	}
 
 	receive() external payable {
