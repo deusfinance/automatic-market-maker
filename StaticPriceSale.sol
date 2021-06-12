@@ -2,10 +2,9 @@
 
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.6.12;
+pragma solidity ^0.8.4;
 
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IUniswapV2Pair {
     function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
@@ -28,7 +27,10 @@ contract StaticPriceSale is Ownable{
     // DEUSToken contract address
     DEUSToken public deusToken;
 
+    event ChangedEndBlock(uint256 oldEndBlock, uint256 newEndBlock);
+
     function setEndBlock(uint256 _endBlock) public onlyOwner{
+        ChangedEndBlock(endBlock, _endBlock);
         endBlock = _endBlock;
     }
 
@@ -44,13 +46,13 @@ contract StaticPriceSale is Ownable{
 
         // (1/0.63)*10**12 == 1587301587301
         // reserve1(USDT) has 6 decimals and reserve0(ETH) has 18 decimals, so 18-6 = 12
-        return reserve1.mul(1587301587301).div(reserve0);
+        return reserve1 * 1587301587301 / reserve0;
     }
 
     function buy() public payable{
         require(block.number <= endBlock, 'static price sale has been finished');
 
-        uint256 tokenAmount = msg.value.mul(price());
+        uint256 tokenAmount = msg.value * price();
         deusToken.mint(msg.sender, tokenAmount);
     }
 

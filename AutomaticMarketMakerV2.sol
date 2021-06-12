@@ -3,8 +3,8 @@
 
 pragma solidity ^0.8.4;
 
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v4.1/contracts/access/AccessControl.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v4.1/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface IERC20 {
 	function totalSupply() external view returns (uint256);
@@ -97,6 +97,8 @@ contract AutomaticMarketMakerV2 is AccessControl, ReentrancyGuard {
 	}
 
 	constructor(address _WETH, address _dbEthToken, address _power) ReentrancyGuard() {
+		require(_WETH != address(0) && _dbETHToken != address(0) && _power != address(0), "Bad args");
+
 		_setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 		_setupRole(OPERATOR_ROLE, msg.sender);
 		_setupRole(FEE_COLLECTOR_ROLE, msg.sender);
@@ -113,7 +115,7 @@ contract AutomaticMarketMakerV2 is AccessControl, ReentrancyGuard {
 		uint32 _connectorWeight,
 		uint256 _depositAmount) internal view returns (uint256){
 		// validate input
-		require(_supply > 0 && _connectorBalance > 0 && _connectorWeight > 0 && _connectorWeight <= scale);
+		require(_supply > 0 && _connectorBalance > 0 && _connectorWeight > 0 && _connectorWeight <= scale, "_bancorCalculateSaleReturn() Error");
 
 		// special case for 0 deposit amount
 		if (_depositAmount == 0) {
