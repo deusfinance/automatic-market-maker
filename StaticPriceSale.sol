@@ -35,6 +35,8 @@ contract StaticPriceSale is Ownable{
     }
 
     constructor(uint256 _endBlock, address _deusToken, address _pair) public {
+        require(_deusToken != address(0) && _pair != address(0), "Bad args");
+
         endBlock = _endBlock;
         deusToken = DEUSToken(_deusToken);
         pair = IUniswapV2Pair(_pair);
