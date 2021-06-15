@@ -4,10 +4,10 @@
 
 pragma solidity ^0.6.12;
 
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/AccessControl.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract DEUSToken is ERC20, AccessControl{
+contract DEUSToken is ERC20, AccessControl {
 
 	uint256 public currentPointIndex = 0;
 

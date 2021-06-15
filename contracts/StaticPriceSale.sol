@@ -16,9 +16,6 @@ interface DEUSToken {
 
 contract StaticPriceSale is Ownable{
 
-    using SafeMath for uint112;
-    using SafeMath for uint256;
-
     uint256 public endBlock;
 
     // UniswapV2 ETH/USDT pool address
@@ -27,15 +24,15 @@ contract StaticPriceSale is Ownable{
     // DEUSToken contract address
     DEUSToken public deusToken;
 
-    event ChangedEndBlock(uint256 oldEndBlock, uint256 newEndBlock);
+    event EnbBlockChanged(uint256 oldEndBlock, uint256 newEndBlock);
 
     function setEndBlock(uint256 _endBlock) public onlyOwner{
-        ChangedEndBlock(endBlock, _endBlock);
+        emit EnbBlockChanged(endBlock, _endBlock);
         endBlock = _endBlock;
     }
 
-    constructor(uint256 _endBlock, address _deusToken, address _pair) public {
-        require(_deusToken != address(0) && _pair != address(0), "Bad args");
+    constructor(uint256 _endBlock, address _deusToken, address _pair) {
+        require(_deusToken != address(0) && _pair != address(0), "Wrong arguments");
 
         endBlock = _endBlock;
         deusToken = DEUSToken(_deusToken);

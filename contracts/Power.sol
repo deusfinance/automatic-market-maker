@@ -168,6 +168,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+
 pragma solidity ^0.8.4;
 
  /**
@@ -180,7 +181,7 @@ pragma solidity ^0.8.4;
  * https://github.com/bancorprotocol/contracts/blob/c9adc95e82fdfb3a0ada102514beb8ae00147f5d/solidity/contracts/converter/BancorFormula.sol
  */
 contract Power {
-	string public version = "0.3";
+	string public version = "0.4";
 
 	uint256 public constant ONE = 1;
 	uint8 public constant MIN_PRECISION = 32;
@@ -466,7 +467,7 @@ contract Power {
 		if (maxExpArray[lo] >= _x)
 			return lo;
 
-		assert(false);
+		require(false, "findPositionInMaxExpArray Error");
 		return 0;
 	}
 

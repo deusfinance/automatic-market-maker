@@ -5,9 +5,10 @@
 pragma solidity ^0.6.12;
 
 
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/math/SafeMath.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/payment/PullPayment.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/payment/PullPayment.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./Power.sol";
 
 interface DEUSToken {
@@ -17,7 +18,7 @@ interface DEUSToken {
 	function burn(address from, uint256 amount) external;
 } 
 
-contract AutomaticMarketMaker is Ownable, PullPayment, Power{
+contract AutomaticMarketMaker is Ownable, PullPayment, Power, ReentrancyGuard {
 
 	using SafeMath for uint256;
 	using SafeMath for uint32;
@@ -59,7 +60,8 @@ contract AutomaticMarketMaker is Ownable, PullPayment, Power{
 		// receive ether
 	}
 
-	constructor(address _deusToken) public{
+	constructor(address _deusToken) public ReentrancyGuard() {
+		require(_deusToken != address(0), "Wrong argument");
 		daoWallet = msg.sender;
 		deusToken = DEUSToken(_deusToken);
 	}
@@ -74,7 +76,7 @@ contract AutomaticMarketMaker is Ownable, PullPayment, Power{
 		uint32 _connectorWeight,
 		uint256 _depositAmount) internal view returns (uint256){
 		// validate input
-		require(_supply > 0 && _connectorBalance > 0 && _connectorWeight > 0 && _connectorWeight <= scale);
+		require(_supply > 0 && _connectorBalance > 0 && _connectorWeight > 0 && _connectorWeight <= scale, "_bancorCalculatePurchaseReturn Error");
 
 		// special case for 0 deposit amount
 		if (_depositAmount == 0) {
@@ -88,7 +90,7 @@ contract AutomaticMarketMaker is Ownable, PullPayment, Power{
 		baseN, _connectorBalance, _connectorWeight, scale
 		);
 		uint256 newTokenSupply = _supply.mul(result) >> precision;
-		return newTokenSupply - _supply;
+		return newTokenSupply.sub(_supply);
 	}
 
 	function calculatePurchaseReturn(uint256 etherAmount) public view returns (uint256) {
@@ -113,7 +115,7 @@ contract AutomaticMarketMaker is Ownable, PullPayment, Power{
 		}
 	}
 
-	function buy(uint256 _tokenAmount) external payable{
+	function buy(uint256 _tokenAmount) external payable nonReentrant() {
 		uint256 tokenAmount = calculatePurchaseReturn(msg.value);
 		require(tokenAmount >= _tokenAmount, 'price changed');
 
@@ -131,7 +133,7 @@ contract AutomaticMarketMaker is Ownable, PullPayment, Power{
 		uint256 _sellAmount) internal view returns (uint256){
 
 		// validate input
-		require(_supply > 0 && _connectorBalance > 0 && _connectorWeight > 0 && _connectorWeight <= scale && _sellAmount <= _supply);
+		require(_supply > 0 && _connectorBalance > 0 && _connectorWeight > 0 && _connectorWeight <= scale && _sellAmount <= _supply, "_bancorCalculateSaleReturn Error");
 		// special case for 0 sell amount
 		if (_sellAmount == 0) {
 			return 0;
@@ -143,7 +145,7 @@ contract AutomaticMarketMaker is Ownable, PullPayment, Power{
 
 		uint256 result;
 		uint8 precision;
-		uint256 baseD = _supply - _sellAmount;
+		uint256 baseD = _supply.sub(_sellAmount);
 		(result, precision) = power(
 			_supply, baseD, scale, _connectorWeight
 		);
@@ -169,7 +171,7 @@ contract AutomaticMarketMaker is Ownable, PullPayment, Power{
 		}
 	}
 
-	function sell(uint256 tokenAmount, uint256 _etherAmount) external{
+	function sell(uint256 tokenAmount, uint256 _etherAmount) external nonReentrant() {
 		uint256 etherAmount = calculateSaleReturn(tokenAmount);
 
 		require(etherAmount >= _etherAmount, 'price changed');
